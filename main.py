@@ -3,199 +3,237 @@
 #
 #  main.py
 #  
-#  Copyright 2016 Randson <randson@debian-randson>
-#  
+#  Copyright 2016 Randson <randson@debian-randson>#  
 
 
 import math
 import random as rand
 
 txCros = 0.75
-txMuta = 1
-sizeChromossome = 4
-sizePopulation = 10
-qtdVar = 3
+txMuta = 0.05
+sizeChromossome = 6
+sizePopulation = 6
+qtdVar = 1
 
-def main():
+minimo = -10
+maximo = 10
+
+def main():	
 	
-	minimo = -3
-	maximo = 5
-	p = initializePopulation(sizePopulation,sizeChromossome,qtdVar)
-	c1 = p[0]
-	c2 = p[1]
 	
-	print c1,"\n", c2
-	print '-------------'
-	c = cruzaChromossomo(c1,c2)
-	print c[0],"\n", c[1]
+
+	population = initializePopulation(sizePopulation, sizeChromossome, qtdVar)
 	
-	return 0
+	l = len(population)
+	
+	i = 0	
+	bestFit = []
+	bestValue = []
+
+	while(i < 2):	
+		
+		valuePopulation = getValuePopulation(population)
+		normalizedPopulation = normalizePopulation(valuePopulation)
+		fitnessPopulation = getFitnessPopulation(normalizedPopulation)
+	
+		population = getNewPopulation(population,fitnessPopulation)
+		population = avaliaPopulacao(population,fitnessPopulation)
+
+		i += 1
+
+	for best in normalizedPopulation:
+		print best
 
 def ga():
-	population = initializePopulation()
-	while(i < qtdGen):
-		population = getNewPopulation(population)
+	pass
 	
 def initializePopulation(sizePopulation, sizeChromossome,qtdVar):
 	population = []
 	
-	for i in range(0,sizePopulation):
-		chromossome = []
-		for j in range(0,qtdVar):			
-			var = getNewChromossome(sizeChromossome)
-			chromossome.append(var)
-			
+	for i in range(sizePopulation):
+		chromossome = getNewChromossome(sizeChromossome,qtdVar)			
 		population.append(chromossome)
 	
 	return population
 		
-def getNewChromossome(sizeChromossome):
+def getNewChromossome(sizeChromossome,qtdVar):
 		
 	chromossome = []
-	for i in range(0,sizeChromossome):
-		chromossome.append(rand.randint(0,1))
-		
+	for i in range(qtdVar):			
+		var = ''
+		for j in range(sizeChromossome):
+			var += str(rand.randint(0,1))
+		chromossome.append(var)
+
 	return chromossome;
 
 def mutaPopulation(population):
 	for i in range(0,len(population)):
-		population[i] = mutaCromossomo(population[i])
+		if(rand.random() <= txMuta):
+			population[i] = mutaCromossomo(population[i])
 		
 	return population
 
 def mutaCromossomo(chromossome):	
-	for var in chromossome:		
-		if(rand.random() <= txMuta):
-			n = rand.randint(1,len(var))
-			for i in range(0,n):
-				p = rand.randint(0,len(var)-1)
-				var[p] ^= 1
+	for var in chromossome:			
+		n = rand.randint(1,len(var))
+		for i in range(n):
+			p = rand.randint(len(var)-1)
+			if var[p] == '1':
+				c = '0'
+			else:
+				c = '1'
+			var[p] ^= var[p][0:p] + c +var[p+1:]
 	
 	return chromossome		
 
-def getValorNumericoPopulacao(population):
+def getValuePopulation(population):
+
 	valores = []
 	for chromossome in population:
-		valorChromossome = getValorNumericoChromossomo(chromossome)
-		valores.append(valorChromossome)
-	
+		valorChromossome = getValueChromossome(chromossome)
+		valores.append(valorChromossome)	
+
 	return valores	
 
-def getValorNumericoChromossomo(chromossome):	
+def getValueChromossome(chromossome):
+
 	variaveis = []
 	
 	for var in chromossome:		
-		valor= 0
-		var.reverse()
-		for i in range(0,len(var)):
-			valor += var[i] * 2 ** (i)
-		
-		variaveis.append(valor)
-		
+		variaveis.append(int(var,2))
+
 	return variaveis
 
-def normalizePopulation(valoresPopulation,maximo,minimo):
+def normalizePopulation(valuePopulation):
 
 	valoresNormalizados = []
-	for chromossome in valoresPopulation:
-		chromossomeVarNorm = []
-		
-		for var in chromossome:
-			valorVar = minimo + (maximo - minimo)*var*1.0/(2**sizeChromossome-1)
-			chromossomeVarNorm.append(valorVar)
-					
-		valoresNormalizados.append(chromossomeVarNorm)
+	for chromossome in valuePopulation:
+		chromossomeVarNorm = []		
+		normalizedChromossome = normalizeChromossome(chromossome)					
+		valoresNormalizados.append(normalizedChromossome)
 		
 	return valoresNormalizados
 
+def normalizeChromossome(chromossome):
+	chromossomeNormalized = []
+	for var in chromossome:
+		value = minimo + (maximo - minimo)*var*1.0/(2**sizeChromossome-1)
+		chromossomeNormalized.append(value)
 
+	return chromossomeNormalized
 
-def getNewPopulation(population):
+def getNewPopulation(population,fitnessPopulation):
 	newPopulation = []
-	chr1,chr2
-	for chn in population:
-		chr1 = selectChromossome()
-		chr2 = selectChromossome()
+
+	#normalize fitness
+	maxFitness = max(fitnessPopulation)
+	minFitness = min(fitnessPopulation)
+	
+	for i in range(len(fitnessPopulation)):
+		fitnessPopulation[i] = (fitnessPopulation[i] - minFitness)/(1.0*maxFitness)
+
+
+	while len(newPopulation) < len(population):
+		c1 = selectChromossome(fitnessPopulation)
+		c2 = selectChromossome(fitnessPopulation)
 		
-		filhos = applyCrossover(chr1,chr2)
-		
+		filhos = applyCrossover(population[c1],population[c2])
+	
 		newPopulation.append(filhos[0])
 		newPopulation.append(filhos[1])
 	
 	return newPopulation
 
-def cruzaPopulation(population, aptidao):
-	sizePop = 0
-	while(sizePop < len(population)):
-		i1 = selectChromossome(aptidao)
-	
-	sizePop = len(population)
-	
-	div = len(population)/4
-	
-	i1 = selectChromossome(aptidao)
-	i2 = (i1+ 2*div) % sizePop
-	i3 = (i1 + div) % sizePop
-	i4 = (i1 + 3*div) % sizePop
-
-
 def cruzaChromossomo(chr1,chr2):	
 	filhos = []
 	
-	for i in range(0, len(chr1)):		
-		chrOut = applyCrossover(chr1[i],chr2[i])
-		chr1[i] = chrOut[0]
-		chr2[i] = chrOut[1]
+	chr1_ = []
+	chr2_ = []
+
+	for i in range(len(chr1)):		
+		f1, f2  = applyCrossover(chr1[i],chr2[i])
+		chr1_.append(f1)	
+		chr2_.append(f2)
 	
-	filhos = [chr1, chr2]
+	filhos = [chr1_, chr2_]
 			
 	return filhos
 
 def applyCrossover(var1,var2):
 
-	half = 	len(var1)/2
-		
-	for j in range(0,half):
-		aux = var1[j]
-		var1[j] = var2[half+j]
-		var2[half+j] = aux
-		
-	filhos = [var1,var2]	
-	return filhos
+	half = 	len(var1)/2	
+	var1_ = var2[half:] + var1[half:]
+	var2_ = var2[0:half] + var1[0:half]
 	
-def selectChromossome(aptidao):
-	somaRand = rand.random()*sum(aptidao)
+	return [var1_, var2_]
+	
+def selectChromossome(fitnessPopulation):
+
+	somaRand = rand.random()*sum(fitnessPopulation)
 	
 	somaAcumulada = 0
 	i = 0
 	while(1):		
-		somaAcumulada += aptidao[i]	
+		somaAcumulada += fitnessPopulation[i]	
 		if(somaAcumulada >= somaRand):			
 			break
 		i += 1
 			
 	return i
 	
-def getAptidao(populationNormalized):
-	aptidao = []
+def getFitnessPopulation(population):
+
+	populationNormalized = normalizePopulation(population)
+	fitnessPopulation = []
 	for chromossome in populationNormalized:
-		for var in chromossome:
-			pass
+		value = getFitnessChromossome(chromossome)
+		fitnessPopulation.append(value)
 	
-def feval(x):		
-	return x**2
+
+	return fitnessPopulation
+
+def getFitnessChromossome(chromossome):
+	value = 0
+	for var in chromossome:
+		value += feval(var)
+
+	return value
+
+def feval(x):
+	return x*x
 	
-def sortPopulation(population):
-	aptidao = getAptidao(population);
-	# ordena população
+def sortPopulation(population,fitnessPopulation):
+
+	if len(population) <= 1:
+		return population
+
+	# cria as sublistas dos maiores, menores e iguais ao pivo
+	fitness_less, fitness_equal, fitness_greater = [], [], [] 
+	population_less, population_equal, population_greater = [], [], [] 
+
+	# escolhe o pivo. neste caso, o primeiro elemento da lista
+	pivot = fitnessPopulation[0] 
+	for i in range(len(population)):
+		# adiciona o elemento cromossomo a lista correspondeste
+	    if fitnessPopulation[i] < pivot:
+	        fitness_less.append(fitnessPopulation[i])
+	        population_less.append(population[i])
+	    elif fitnessPopulation[i] == pivot:
+	        fitness_equal.append(fitnessPopulation[i])
+	        population_equal.append(population[i])
+	    else:
+		 	fitness_greater.append(fitnessPopulation[i])
+		 	population_greater.append(population[i])			
+	
+	return sortPopulation(population_less,fitness_less) + population_equal + sortPopulation(population_greater,fitness_greater)
+	
+def avaliaPopulacao(population,fitnessPopulation):
+
+	population =  sortPopulation(population,fitnessPopulation)
+	population.reverse()
 	return population
-	
-def avaliaPopulacao(populacao):
-	population =  sortPopulation(population)
-	
-def normalizeChromossome(chrmossome, minimo, maximo):
-	 pass
-	 
+		 
 if __name__ == '__main__':
 	main()
 
