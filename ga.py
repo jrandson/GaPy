@@ -83,3 +83,27 @@ class ga(object):
 		
 	def normalizeChromossome(self, chrmossome, minimo, maximo):
 		 pass
+
+class Chromossome(object):
+	"""docstring for Chromossome"""
+	def __init__(sizeChromossome, qtdVar):
+		self._sizeChromossomome = sizeChromossome
+		self._qtdVar = qtdVar
+		self.getNoma = self.getGenoma(self)
+		self.getValue = self.computeValue(self)
+
+
+	def getGenoma(self):
+		return ''
+
+	def getValue(self):
+		return self._value
+
+	def computeValue(self):
+		return 0
+
+	def setFitness(self,setFitness):
+		self._fitness = _fitness
+
+	def getFitness(self):
+		return self._fitness

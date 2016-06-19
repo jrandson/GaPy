@@ -9,43 +9,46 @@
 import math
 import random as rand
 
-txCros = 0.75
-txMuta = 0.05
-sizeChromossome = 6
-sizePopulation = 6
+txCros = 0.8
+txMuta = 0.1
+txElite = 0.1
+sizeChromossome = 16
+sizePopulation = 2
 qtdVar = 1
 
 minimo = -10
 maximo = 10
 
-def main():	
-	
-	
+def main():		
 
 	population = initializePopulation(sizePopulation, sizeChromossome, qtdVar)
-	
-	l = len(population)
-	
+
+	valuePopulation = getValuePopulation(population)
+	normalizedPopulation = normalizePopulation(valuePopulation)
+	fitnessPopulation = getFitnessPopulation(normalizedPopulation)
+	population = avaliaPopulacao(population,fitnessPopulation)	
+
+	l = len(population)	
 	i = 0	
 	bestFit = []
 	bestValue = []
 
-	while(i < 2):	
+	while(i < 100):	
 		
-		valuePopulation = getValuePopulation(population)
-		normalizedPopulation = normalizePopulation(valuePopulation)
-		fitnessPopulation = getFitnessPopulation(normalizedPopulation)
-	
 		population = getNewPopulation(population,fitnessPopulation)
 		population = avaliaPopulacao(population,fitnessPopulation)
 
+		valuePopulation = getValuePopulation(population)
+		normalizedPopulation = normalizePopulation(valuePopulation)
+		fitnessPopulation = getFitnessPopulation(normalizedPopulation)	
+		
+		bestValue.append(normalizedPopulation[0])
 		i += 1
 
-	for best in normalizedPopulation:
+	for best in bestValue:
 		print best
 
-def ga():
-	pass
+
 	
 def initializePopulation(sizePopulation, sizeChromossome,qtdVar):
 	population = []
@@ -74,18 +77,20 @@ def mutaPopulation(population):
 		
 	return population
 
-def mutaCromossomo(chromossome):	
+def mutaCromossomo(chromossome):
+	newChromossome = []	
 	for var in chromossome:			
 		n = rand.randint(1,len(var))
 		for i in range(n):
-			p = rand.randint(len(var)-1)
+			p = rand.randint(0,len(var)-1)
 			if var[p] == '1':
 				c = '0'
 			else:
 				c = '1'
-			var[p] ^= var[p][0:p] + c +var[p+1:]
-	
-	return chromossome		
+			var = var[0:p] + c +var[p+1:]
+		newChromossome.append(var)
+
+	return newChromossome		
 
 def getValuePopulation(population):
 
@@ -126,28 +131,30 @@ def normalizeChromossome(chromossome):
 def getNewPopulation(population,fitnessPopulation):
 	newPopulation = []
 
+	i = 1
+	while i < int(txElite*sizePopulation):
+		newPopulation.append(population[i])
+		i += 1
 	#normalize fitness
-	maxFitness = max(fitnessPopulation)
 	minFitness = min(fitnessPopulation)
-	
 	for i in range(len(fitnessPopulation)):
-		fitnessPopulation[i] = (fitnessPopulation[i] - minFitness)/(1.0*maxFitness)
+		fitnessPopulation[i] -= minFitness
 
 
 	while len(newPopulation) < len(population):
 		c1 = selectChromossome(fitnessPopulation)
 		c2 = selectChromossome(fitnessPopulation)
+
+		filhos = cruzaChromossomo(population[c1],population[c2])
 		
-		filhos = applyCrossover(population[c1],population[c2])
-	
 		newPopulation.append(filhos[0])
 		newPopulation.append(filhos[1])
 	
 	return newPopulation
 
 def cruzaChromossomo(chr1,chr2):	
-	filhos = []
-	
+
+	filhos = []	
 	chr1_ = []
 	chr2_ = []
 
@@ -166,19 +173,19 @@ def applyCrossover(var1,var2):
 	var1_ = var2[half:] + var1[half:]
 	var2_ = var2[0:half] + var1[0:half]
 	
-	return [var1_, var2_]
+	return var1_ , var2_
 	
 def selectChromossome(fitnessPopulation):
-
-	somaRand = rand.random()*sum(fitnessPopulation)
-	
+	somaRand = rand.random()*sum(fitnessPopulation)	
 	somaAcumulada = 0
-	i = 0
-	while(1):		
-		somaAcumulada += fitnessPopulation[i]	
-		if(somaAcumulada >= somaRand):			
+	i = -1
+	while(i < len(fitnessPopulation)-1):	
+		i += 1	
+		somaAcumulada += fitnessPopulation[i]
+		if somaAcumulada >= somaRand :			
 			break
-		i += 1
+	
+
 			
 	return i
 	
@@ -190,6 +197,9 @@ def getFitnessPopulation(population):
 		value = getFitnessChromossome(chromossome)
 		fitnessPopulation.append(value)
 	
+	maxFitness = max(fitnessPopulation)
+	for i in range(len(fitnessPopulation)):
+		fitnessPopulation[i] = (maxFitness - fitnessPopulation[i])/maxFitness
 
 	return fitnessPopulation
 
@@ -201,7 +211,7 @@ def getFitnessChromossome(chromossome):
 	return value
 
 def feval(x):
-	return x*x
+	return math.pow(x,2)
 	
 def sortPopulation(population,fitnessPopulation):
 
