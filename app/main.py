@@ -13,7 +13,7 @@ txCros = 0.8
 txMuta = 0.1
 txElite = 0.1
 sizeChromossome = 16
-sizePopulation = 8
+sizePopulation = 50
 qtdVar = 1
 
 minimo = -10
@@ -26,17 +26,6 @@ def main():
 	valuePopulation = getValuePopulation(population)
 	normalizedPopulation = normalizePopulation(valuePopulation)
 	fitnessPopulation = getFitnessPopulation(normalizedPopulation)
-
-	print len(population)
-	print len(normalizedPopulation)
-	print len(fitnessPopulation)
-	print len(valuePopulation)
-
-	for i in valuePopulation:
-		print i
-
-	return 0
-
 	population = avaliaPopulacao(population,fitnessPopulation)	
 
 	l = len(population)	
@@ -44,7 +33,7 @@ def main():
 	bestFit = []
 	bestValue = []
 
-	while(i < 10):	
+	while(i < 50):	
 		
 		population = getNewPopulation(population,fitnessPopulation)
 		population = avaliaPopulacao(population,fitnessPopulation)
@@ -199,7 +188,9 @@ def selectChromossome(fitnessPopulation):
 		somaAcumulada += fitnessPopulation[i]
 		if somaAcumulada >= somaRand :			
 			break
-						
+	
+
+			
 	return i
 	
 def getFitnessPopulation(population):
